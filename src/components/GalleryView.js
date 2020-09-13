@@ -8,6 +8,7 @@ import GridListTile from '@material-ui/core/GridListTile';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
+import AddIcon from '@material-ui/icons/Add';
 
 const db = app.firestore()
 
@@ -43,14 +44,14 @@ const useStyles = makeStyles((theme) => ({
 
 const Gallery = () => {
     const classes = useStyles()
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(false) // Defined for popup menu
     const [images, setImages] = useState()
     const fileUrlList = []
 
     useEffect(() => {
         const fetchImages = async () => {
-            const imageCollection = await db.collection("images").get()
-            setImages(imageCollection.docs.map(doc => {
+            const imageCollection = await db.collection("images").get() // Fetching images from Firestore
+            setImages(imageCollection.docs.map(doc => { // Setting previously fetched images into images state
                 return doc.data()
             }))
         }
@@ -63,7 +64,7 @@ const Gallery = () => {
                 <AppBar position="static">
                     <Toolbar>
                         <Typography variant="h6" className={classes.title}> React Gallery App </Typography>
-                        <Button variant="contained" color="primary" className={classes.button} onClick={() => setOpen(true)}> Upload </Button>
+                        <Button variant="contained" color="primary" className={classes.button} onClick={() => setOpen(true)}><AddIcon />Upload </Button>
                     </Toolbar>
                 </AppBar>
             </div>
@@ -79,10 +80,12 @@ const Gallery = () => {
                         files.forEach(async (file) => {
                             const storageRef = app.storage().ref()
                             const fileRef = storageRef.child(file.name)
-                            await fileRef.put(file)
-                            fileUrlList.push(await fileRef.getDownloadURL())
-                            await fileUrlList.forEach((image) => {
-                                console.log("image", image)
+
+                            await fileRef.put(file) // Pushing images to Firebase storage
+
+                            fileUrlList.push(await fileRef.getDownloadURL()) // Getting download URL from Firebase storage into an array to show ahead
+
+                            await fileUrlList.forEach((image) => { // Pushing every image URL to the Firestore with unique IDs
                                 db.collection("images").doc().set({
                                     image: image
                                 })
@@ -92,9 +95,10 @@ const Gallery = () => {
                     }}
                     showPreviews={true}
                     showFileNamesInPreview={true}
+                    getDropRejectMessage={() => { alert("You can only upload images!") }} // Alert message for invalid file format
                 />
-                <GridList cellHeight={350} className={classes.gridList}>
-                    {images !== undefined
+                <GridList cellHeight={"auto"} className={classes.gridList}>
+                    {images !== undefined // If there's images in Firestore, it'll be appeared on GridList
                         ? images.map(item => {
                             return (
                                 <GridListTile className={classes.images}>
